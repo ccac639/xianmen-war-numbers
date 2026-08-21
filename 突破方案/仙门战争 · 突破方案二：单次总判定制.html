@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>仙门战争 · 突破方案二：单次总判定制</title>
+<style>
+body{font-family:sans-serif;max-width:1280px;margin:0 auto;padding:20px;background:#f0f4f8;color:#263238}
+h1{color:#00695c;border-bottom:3px solid #00695c;padding-bottom:10px}
+h2{color:#00796b;margin-top:32px;border-left:4px solid #26a69a;padding-left:12px}
+table{width:100%;border-collapse:collapse;margin:16px 0;background:#fff;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+th,td{border:1px solid #cfd8dc;padding:7px 10px;text-align:center}
+th{background:#e0f2f1;font-weight:600}
+tr:hover{background:#f1f8e9}
+.major{background:#fff3e0;font-weight:bold}
+.good{color:#2e7d32;font-weight:bold}
+.bad{color:#c62828;font-weight:bold}
+.warn{background:#ffebee}
+.formula{background:#e0f7fa;padding:16px;border-radius:6px;font-family:monospace;margin:12px 0;border-left:4px solid #0097a7;line-height:1.8;font-size:13px}
+.card{background:#fff;border-radius:8px;padding:22px;margin:18px 0;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.summary{background:linear-gradient(135deg,#26a69a,#00897b);color:#fff;padding:28px;border-radius:10px;margin-bottom:26px}
+.flex{display:flex;gap:18px;flex-wrap:wrap}
+.flex>div{flex:1;min-width:280px}
+.pros{background:#e8f5e9;padding:16px;border-radius:8px}
+.cons{background:#ffebee;padding:16px;border-radius:8px}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;margin:2px}
+.t1{background:#b2dfdb;color:#004d40}.t2{background:#ffccbc;color:#bf360c}.t3{background:#c5cae9;color:#1a237e}
+small{color:#607d8b}
+</style>
+</head>
+<body>
+
+<div class="summary">
+<h1>🎯 仙门战争 · 突破方案二：单次总判定制</h1>
+<p>一次掷骰决定突破成败 ｜ 雷劫/心魔作为加权贡献模块 ｜ 加法聚合避免相乘压缩 ｜ 保底精确可控</p>
+</div>
+
+<div class="card">
+<h2>📐 核心公式</h2>
+<div class="formula">
+<b>雷劫贡献</b> R = h(气血完成率) + 体质修正 + 血脉修正 + 功法雷修正 + 装备雷修正<br>
+<b>心魔贡献</b> M = 0.5×[h(神识完成率) + h(法力完成率)] + 天赋修正 + 命格修正 + 功法心修正 + 装备心修正<br><br>
+<b>突破准备度</b> D = w<sub>雷</sub>×R + w<sub>心</sub>×M<br>
+<b>通用基础</b> G = 0.10 × clamp(D/0.45, 0, 1)　<small>← 按达标比例发放，防零资源+10%下限过高</small><br><br>
+<b>最终突破率</b> = clamp( 0.04 + D×S<sub>阶段</sub> + G + 外部增幅 + 运气修正 , 0.02, 0.97 )<br><br>
+<b>贡献函数</b> h(x)：x&lt;1 时 0.45×x<sup>2.5</sup>　｜　x≥1 时 0.45+0.10×(1−1/x)　｜　封顶 0.55
+</div>
+<p><b>关键设计</b>：P_floor=4% 统一底线（三项全空仍可搏命）；G 条件化（三项100%才全额10%）；S 阶段系数同时控制难度与压缩大境界超额收益。</p>
+</div>
+
+<div class="card">
+<h2>🔬 七大研究问题速览</h2>
+<table>
+<tr><th>问题</th><th>结论</th><th>核心依据</th></tr>
+<tr><td>是否50/50</td><td>✅ 默认50/50</td><td>气血独扛一关已隐含2×权重；偏科惩罚适中（39.8% vs 均衡80%的36.1%）</td></tr>
+<tr><td>按境界变权重</td><td>✅ 推荐动态</td><td>小境界心魔重（精纯考验），大境界雷劫重（跃升引劫）</td></tr>
+<tr><td>&lt;100%保概率</td><td>✅ h(x)凸函数+4%底线</td><td>40%→9.7%，0%→4%，非零且平滑</td></tr>
+<tr><td>&gt;100%递减</td><td>✅ 对数收敛</td><td>150%仅+3.4%，200%仅+5.6%</td></tr>
+<tr><td>失败扣资源</td><td>✅ 瓶颈判定</td><td>比较w×R vs w×M，低侧为瓶颈定向扣除；差&lt;0.05四项全扣</td></tr>
+<tr><td>单骰更易平衡</td><td>✅ 显著</td><td>期望次数=1/P直接可算；调参从26×2矩阵降为26×1</td></tr>
+<tr><td>极端死亡</td><td>✅ 白名单制</td><td>正常失败0%；强行5%/极低资源2.5%/剧情劫4%综合死亡率</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>📊 26阶段 S 系数表</h2>
+<table>
+<tr><th>阶段</th><th>境界</th><th>节点</th><th>目标率</th><th>S系数</th><th>零资源下限</th></tr>
+<tr><td>1-9</td><td>凡人~炼气八层</td><td>普通</td><td>89%</td><td>1.667</td><td>4%</td></tr>
+<tr><td>10</td><td>炼气九层</td><td>末段</td><td>86%</td><td>1.600</td><td>4%</td></tr>
+<tr class="major"><td>11</td><td>筑基初期</td><td>大境界</td><td>60%</td><td>1.022</td><td>4%</td></tr>
+<tr><td>12-14</td><td>筑基中/后/满</td><td>普通/圆满</td><td>78~86%</td><td>1.422~1.600</td><td>4%</td></tr>
+<tr class="major"><td>15</td><td>紫府初期</td><td>大境界</td><td>50%</td><td>0.800</td><td>4%</td></tr>
+<tr><td>16-18</td><td>紫府中/后/满</td><td>普通/圆满</td><td>73~80%</td><td>1.311~1.467</td><td>4%</td></tr>
+<tr class="major"><td>19</td><td>金丹初期</td><td>大境界</td><td>40%</td><td>0.578</td><td>4%</td></tr>
+<tr><td>20-22</td><td>金丹中/后/满</td><td>普通/圆满</td><td>68~75%</td><td>1.200~1.356</td><td>4%</td></tr>
+<tr class="major"><td>23</td><td>元婴初期</td><td>大境界</td><td>30%</td><td>0.356</td><td>4%</td></tr>
+<tr><td>24-26</td><td>元婴中/后/满</td><td>普通/圆满</td><td>62~70%</td><td>1.067~1.244</td><td>4%</td></tr>
+</table>
+<p><small>※ S的双重作用：①控制标准难度；②天然压缩大境界超额收益（元婴S=0.356，堆150%资源仅+1.9%概率——大境界拼底蕴非堆资源）</small></p>
+</div>
+
+<div class="card">
+<h2>🧪 10案例 × 3权重测算（筑基初期 S=1.022）</h2>
+<table>
+<tr><th>案例</th><th>气血/神识/法力</th><th>特殊</th><th>R</th><th>M</th><th>W1 50/50</th><th>W2 60/40</th><th>W3 55/45</th><th>失败瓶颈</th></tr>
+<tr><td>①三项全满</td><td>100/100/100</td><td>—</td><td>0.450</td><td>0.450</td><td class="good">60.0%</td><td>60.0%</td><td>60.0%</td><td>双重薄弱</td></tr>
+<tr><td>②只有气血满</td><td>100/60/60</td><td>—</td><td>0.450</td><td>0.125</td><td>39.8%</td><td class="good">43.8%</td><td>41.8%</td><td class="bad">心魔</td></tr>
+<tr><td>③只有神法满</td><td>60/100/100</td><td>—</td><td>0.125</td><td>0.450</td><td>39.8%</td><td class="bad">35.8%</td><td>37.8%</td><td class="bad">雷劫</td></tr>
+<tr><td>④三项80%</td><td>80/80/80</td><td>—</td><td>0.258</td><td>0.258</td><td>36.1%</td><td>36.1%</td><td>36.1%</td><td>双重薄弱</td></tr>
+<tr><td>⑤三项60%</td><td>60/60/60</td><td>—</td><td>0.125</td><td>0.125</td><td>19.6%</td><td>19.6%</td><td>19.6%</td><td>双重薄弱</td></tr>
+<tr><td>⑥三项40%</td><td>40/40/40</td><td>—</td><td>0.046</td><td>0.046</td><td class="bad">9.7%</td><td>9.7%</td><td>9.7%</td><td>双重薄弱</td></tr>
+<tr><td>⑦高血脉低资源</td><td>40/40/40</td><td>血脉+0.06</td><td>0.106</td><td>0.046</td><td>13.4%</td><td>15.0%</td><td>14.2%</td><td class="bad">心魔</td></tr>
+<tr><td>⑧高资源低增幅</td><td>150/150/150</td><td>—</td><td>0.483</td><td>0.483</td><td class="good">63.4%</td><td>63.4%</td><td>63.4%</td><td>双重薄弱</td></tr>
+<tr><td>⑨高运低资源</td><td>30/30/30</td><td>运气+0.09</td><td>0.022</td><td>0.022</td><td>15.8%</td><td>15.8%</td><td>15.8%</td><td>双重薄弱</td></tr>
+<tr><td>⑩战败低运突破</td><td>90/90/90</td><td>运气−0.09</td><td>0.346</td><td>0.346</td><td>38.0%</td><td>38.0%</td><td>38.0%</td><td>双重薄弱</td></tr>
+</table>
+<p><b>权重敏感性</b>：均衡资源时三权重结果<b>完全一致</b>；权重只影响偏科角色（W2等效给气血+20%定价；W3动态取中）。</p>
+</div>
+
+<div class="card">
+<h2>💔 失败结算（瓶颈判定）</h2>
+<div class="formula">
+失败后：雷劫侧 = w<sub>雷</sub>×R ｜ 心魔侧 = w<sub>心</sub>×M<br>
+|两侧差| ≥ 0.05 → 瓶颈 = 较低侧 → 定向扣除该侧资源<br>
+|两侧差| < 0.05 → 双重薄弱 → 四项全扣 + 元气多扣5
+</div>
+<table>
+<tr><th>失败类型</th><th>气血</th><th>神识</th><th>法力</th><th>元气</th><th>死亡率</th></tr>
+<tr><td>雷劫瓶颈</td><td class="bad">−20%</td><td>—</td><td>—</td><td>−15</td><td>0%</td></tr>
+<tr><td>心魔瓶颈</td><td>—</td><td class="bad">−15%</td><td class="bad">−15%</td><td>−15</td><td>0%</td></tr>
+<tr><td>双重薄弱</td><td class="bad">−20%</td><td class="bad">−15%</td><td class="bad">−15%</td><td>−20</td><td>0%</td></tr>
+<tr class="warn"><td>强行突破失败</td><td class="bad">−20%</td><td class="bad">−15%</td><td class="bad">−15%</td><td>−25</td><td class="bad">5.0%</td></tr>
+<tr class="warn"><td>极低资源大境界</td><td class="bad">−25%</td><td class="bad">−20%</td><td class="bad">−20%</td><td>−25</td><td class="bad">2.5%</td></tr>
+</table>
+<p><b>强行突破</b>：S×1.5（案例⑩强行 → 64.7%），失败触发10%死亡判定（掷0.5骰 → 综合5%）。</p>
+</div>
+
+<div class="card">
+<h2>🎲 运气与保底</h2>
+<div class="flex">
+<div>
+<table>
+<tr><th>档位</th><th>条件</th><th>修正</th></tr>
+<tr><td class="bad">低运</td><td>战败/连败≥2</td><td>−0.12~−0.06</td></tr>
+<tr><td>普通</td><td>默认</td><td>±0.06</td></tr>
+<tr><td class="good">高运</td><td>战胜/丹药</td><td>+0.06~+0.12</td></tr>
+<tr><td class="good">命格运</td><td>天命命格</td><td>+0.05固定</td></tr>
+</table>
+</div>
+<div>
+<div class="formula">
+<b>连败保底</b>：第N次连败 → +N×0.08，封顶0.95<br>
+连败3 → +24% ｜ 连败5 → +40% ｜ 连败8 → 强制95%<br><br>
+<small>单骰制优势：保底直接加总率，<b>精确兑现承诺</b><br>（双骰制需分摊两层，实际提升为乘积难以精确控制）</small>
+</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>⚔️ 方案一 vs 方案二</h2>
+<table>
+<tr><th>维度</th><th>方案一：双骰连续</th><th>方案二：单骰总判</th></tr>
+<tr><td>均衡80%总率</td><td>33.9%（相乘压缩）</td><td class="good">36.1%（加法聚合）</td></tr>
+<tr><td>偏科惩罚</td><td>双重压缩（36.4%）</td><td>线性温和（39.8%）</td></tr>
+<tr><td>玩家理解</td><td class="bad">高（两个独立概率）</td><td class="good">低（一个总率）</td></tr>
+<tr><td>失败归因</td><td class="good">天然明确</td><td>需瓶颈判定补偿</td></tr>
+<tr><td>调参空间</td><td>26×2矩阵</td><td class="good">26×1（S值）</td></tr>
+<tr><td>保底精度</td><td>间接分摊</td><td class="good">精确可控</td></tr>
+<tr><td>叙事层次</td><td class="good">强（过雷败心有故事）</td><td class="bad">弱（一次定生死）</td></tr>
+<tr><td>扩展第三关</td><td class="good">再乘一层即可</td><td>需重设权重</td></tr>
+<tr><td>适用</td><td>重叙事仙侠RPG</td><td class="good">重平衡策略游戏</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>📋 落地建议</h2>
+<ul>
+<li><b>推荐权重</b>：默认 W1（50/50）起步；若测试显示玩家忽视气血养成，切 W3 动态权重引导大境界前炼体</li>
+<li><b>UI 展示</b>：主界面只显示总率；详情面板展开 R/M 贡献条 + 预测瓶颈（"当前心魔薄弱，失败将损失神识法力"）</li>
+<li><b>保底可见</b>：连败计数与下次保底加成对玩家透明，降低挫败感</li>
+<li><b>元气联动</b>：元气不足时禁用正常突破，仅开放"强行"选项并红字警示死亡风险</li>
+</ul>
+<div class="flex">
+<div class="pros">
+<h3 style="margin-top:0;color:#2e7d32">✅ 方案二优点</h3>
+<ul style="padding-left:18px;font-size:14px">
+<li>单骰不压缩，总率直觉准确</li>
+<li>调参/保底/期望次数全部可解析计算</li>
+<li>UI简单，新手友好</li>
+<li>权重系统灵活（三套可切换）</li>
+<li>失败仍保留定向归因</li>
+</ul>
+</div>
+<div class="cons">
+<h3 style="margin-top:0;color:#c62828">⚠️ 方案二缺点</h3>
+<ul style="padding-left:18px;font-size:14px">
+<li>丢失"过雷劫败心魔"叙事中间态</li>
+<li>瓶颈判定是补偿机制，非真实两段</li>
+<li>加第三关需重构权重而非扩展</li>
+<li>G条件化稍复杂，需文档说明</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="card" style="background:#e0f2f1">
+<h2>🏁 总结</h2>
+<p>方案二以<b>单次总判定</b>替代双骰连乘，通过 <b>h(x) 凸贡献函数 + 条件化通用10% + 阶段S系数 + 4%底线</b> 四件套，同时满足：资源不足保留极低概率（规则4/5）、超额收益递减、大境界难度断层、元气独立于概率（规则3）。瓶颈判定机制在单骰框架下<b>完整保留了失败归因与定向扣资源</b>能力，死亡严格白名单化（规则11）。若项目优先平衡性与玩家理解成本，方案二是更优解；若优先叙事层次感，回退方案一。</p>
+</div>
+
+</body>
+</html>
